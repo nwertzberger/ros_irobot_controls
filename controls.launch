@@ -1,0 +1,4 @@
+<launch>
+    <node name="driver" pkg="ros_irobot_create" type="driver.py" output="screen" />
+    <node name="governor" pkg="ros_irobot_controls" type="governor.py" output="screen" required="true" />
+</launch>
