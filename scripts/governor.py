@@ -6,12 +6,12 @@ from ros_irobot_create.msg import SensorPacket
 from ros_irobot_create.srv import Leds
 
 # Global constants
-WARN_CHARGE_LEVEL_MAH = 800     # a charge warning level
-MIN_CHARGE_LEVEL_MAH = 500      # The absolute minimum charge level where ROS is safe to run.
+WARN_CHARGE_LEVEL_MAH = 100     # a charge warning level
+MIN_CHARGE_LEVEL_MAH = 0        # Charge level goes to 0 before it dies.
 MIN_VOLTAGE_LEVEL_MV = 6600     # The absolute minimum voltage level where ROS is safe to run.
 
 class Governor():
-    def checkPower(self, chargeLevel, voltageLevel):
+    def checkPower(self, chargeLevel, voltageLevel, current):
         """
         This function is responsible for checking to see if:
             * remaining charge is at a critical level (arbitrarily chosen at 500 mAH)
@@ -20,8 +20,8 @@ class Governor():
         to be stopped.
         """
         if chargeLevel < WARN_CHARGE_LEVEL_MAH:
-            rospy.logerror("Charge levels are beginning to become very low")
-        if chargeLevel < MIN_CHARGE_LEVEL_MAH:
+            rospy.logerr("Charge levels are beginning to become very low. Please connect to a charger")
+        if chargeLevel < MIN_CHARGE_LEVEL_MAH and current < 0:
             self.triggerShutdown("Charge is at critical level! shutting down!")
         if voltageLevel < MIN_VOLTAGE_LEVEL_MV:
             self.triggerShutdown("Voltage is at critical level! shutting down!")
@@ -38,12 +38,12 @@ class Governor():
 
     def triggerShutdown(self, reason):
             rospy.loginfo(reason)
-            proc = subprocess.Popen(['sudo','/sbin/shutdown','-h', '+0'])
+            proc = subprocess.Popen(['sudo','/sbin/shutdown','-h', '+1'])
             rospy.loginfo("use sudo killall shutdown immediately if this was a mistake")
             rospy.signal_shutdown(reason)
 
     def sensorCallback(self, msg):
-        self.checkPower(msg.batteryCharge, msg.voltage)
+        self.checkPower(msg.batteryCharge, msg.voltage, msg.current)
         self.checkButtons(msg.play, msg.advance)
 
     def onShutdown(self):
