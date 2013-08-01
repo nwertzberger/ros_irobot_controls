@@ -19,13 +19,9 @@ class Governor():
         to be stopped.
         """
         if chargeLevel < MIN_CHARGE_LEVEL_MAH:
-            rospy.logerror("Charge is at critical level! shutting down!")
-            proc = subprocess.call(['sudo','/sbin/shutdown','-h', '+1'])
-            rospy.signal_shutdown("Charge too low!")
+            self.triggerShutdown("Charge is at critical level! shutting down!")
         if voltageLevel < MIN_VOLTAGE_LEVEL_MV:
-            rospy.logerror("Voltage is at critical level! shutting down!")
-            subprocess.call(['sudo','/sbin/shutdown','-h', '+1'])
-            rospy.signal_shutdown("Voltage too low!")
+            self.triggerShutdown("Voltage is at critical level! shutting down!")
 
     def checkButtons(self, playButton, advanceButton):
         """
@@ -35,10 +31,13 @@ class Governor():
         Hitting both of these buttons will lead to a full OS shutdown.
         """
         if playButton and advanceButton:
-            rospy.loginfo("OS SHUTDOWN REQUESTED")
+            self.triggerShutdown("OS SHUTDOWN REQUESTED")
+
+    def triggerShutdown(self, reason):
+            rospy.loginfo(reason)
+            proc = subprocess.Popen(['sudo','/sbin/shutdown','-h', '+1'])
             rospy.loginfo("use sudo killall shutdown immediately if this was a mistake")
-            proc = subprocess.call(['sudo','/sbin/shutdown','-h', '+1'])
-            rospy.signal_shutdown("Shutdown was requested")
+            rospy.signal_shutdown(reason)
 
     def sensorCallback(self, msg):
         self.checkPower(msg.batteryCharge, msg.voltage)
