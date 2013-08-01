@@ -6,6 +6,7 @@ from ros_irobot_create.msg import SensorPacket
 from ros_irobot_create.srv import Leds
 
 # Global constants
+WARN_CHARGE_LEVEL_MAH = 800     # a charge warning level
 MIN_CHARGE_LEVEL_MAH = 500      # The absolute minimum charge level where ROS is safe to run.
 MIN_VOLTAGE_LEVEL_MV = 6600     # The absolute minimum voltage level where ROS is safe to run.
 
@@ -18,6 +19,8 @@ class Governor():
         If either of these cases occurs, it constitutes an emergency and ROS needs
         to be stopped.
         """
+        if chargeLevel < WARN_CHARGE_LEVEL_MAH:
+            rospy.logerror("Charge levels are beginning to become very low")
         if chargeLevel < MIN_CHARGE_LEVEL_MAH:
             self.triggerShutdown("Charge is at critical level! shutting down!")
         if voltageLevel < MIN_VOLTAGE_LEVEL_MV:
@@ -35,7 +38,7 @@ class Governor():
 
     def triggerShutdown(self, reason):
             rospy.loginfo(reason)
-            proc = subprocess.Popen(['sudo','/sbin/shutdown','-h', '+1'])
+            proc = subprocess.Popen(['sudo','/sbin/shutdown','-h', '+0'])
             rospy.loginfo("use sudo killall shutdown immediately if this was a mistake")
             rospy.signal_shutdown(reason)
 
